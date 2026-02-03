@@ -148,8 +148,93 @@ Queries are optional. If omitted, the system runs in update-only mode.
 
 ---
 
-## 7. Query Semantics
+## 7. Datasets
 
+SAGA is evaluated on **dynamic graphs**, where a static base graph is incrementally modified by a stream of updates. This section describes how datasets are prepared and how update batches are generated.
+
+#### Base Graph
+
+Each experiment starts from a **static base graph**, provided as an edge list:
+
+```text
+u v
+u v
+u v
+```
+
+where `u` and `v` denote vertex identifiers.
+
+The base graph is loaded into SAGA as the initial state before any dynamic updates are applied.
+
+#### Update Stream Construction
+
+To model graph evolution, a subset of edges from the dataset is converted into a **stream of dynamic updates**.
+
+Each update is represented in text form as:
+
+```text
+ADD u v
+DEL u v
+```
+
+where:
+
+* `ADD u v` inserts an edge between vertices `u` and `v`
+* `DEL u v` removes an edge between vertices `u` and `v`
+
+These updates are processed incrementally by SAGA’s streaming runtime.
+
+---
+
+#### Update Batch Sizes
+
+To evaluate scalability and responsiveness under varying workloads, update streams are divided into **batches of increasing size**.
+
+The following batch sizes are used throughout the evaluation:
+
+| Batch Size | Number of Updates |
+| ---------- | ----------------- |
+| 0.01K      | 10                |
+| 0.1K       | 100               |
+| 1K         | 1,000             |
+| 10K        | 10,000            |
+| 100K       | 100,000           |
+
+Each batch is processed independently to measure:
+
+* update processing time
+* throughput
+* query latency under concurrent updates
+
+#### Batch Generation Methodology
+
+Given an input dataset, update batches are generated as follows:
+
+1. Load the full edge list of the dataset.
+2. Randomly sample a subset of edges.
+3. Split the sampled edges into batches of the desired size.
+4. Emit updates sequentially as `ADD` or `DEL` operations.
+
+This methodology:
+
+* preserves the original graph structure
+* avoids synthetic graph generation
+* reflects realistic incremental graph evolution
+
+#### Queries During Updates
+
+Queries may be issued:
+
+* concurrently with update batches, or
+* after a batch has completed
+
+Queries are encoded as:
+
+```text
+QUERY vertexId
+```
+
+All queries are served from **live per-vertex state** and do not block update processing.
 * Queries are **read-only**
 * Queries do **not block updates**
 * Queries read directly from **live keyed vertex state**
@@ -157,26 +242,47 @@ Queries are optional. If omitted, the system runs in update-only mode.
 
 ---
 
-## 8. Coordination and Consistency Model
+## 8.  Logging and Debugging
 
-* Updates are processed **locally and incrementally**
-* Boundary (replicated) vertices may trigger coordination via Ω
-* Conflict resolution is **deterministic** (partition-priority policy)
-* The system prioritizes **localized repair and throughput**
+SAGA relies on **Apache Flink’s runtime logging and metrics infrastructure** rather than fine-grained per-update application logging.
 
-This implementation is a **research prototype** and does not claim full transactional or adversarial consistency guarantees.
+#### Logging Design
+
+* SAGA does **not log individual graph updates or per-vertex decisions by default**.
+* This design avoids excessive overhead during high-throughput streaming execution.
+* Instead, logging focuses on **runtime-level events**, including:
+
+  * job startup and termination
+  * operator initialization
+  * checkpoint creation and completion
+  * failures and recovery
+  * backpressure and task warnings
+
+All such events are handled by Flink’s logging subsystem.
+
+#### Log Locations
+
+When running SAGA on a Flink cluster, logs are written to:
+
+```text
+$FLINK_HOME/log/
+```
+
+Typical log files include:
+
+* `flink-*-jobmanager-*.log`
+* `flink-*-taskexecutor-*.log`
+
+These logs provide visibility into:
+
+* state backend initialization
+* operator execution
+* checkpointing and recovery
+* runtime errors, if any
 
 ---
 
-## 9. State Management and Fault Tolerance
-
-* Vertex state is maintained using **Flink keyed state**
-* Periodic checkpoints provide fault tolerance
-* State backend configuration is explicit and configurable
-
----
-
-## 10. Anonymity Notice
+## 9. Anonymity Notice
 
 This repository is released **anonymously** for peer review.
 No identifying information is included in the code or documentation.
