@@ -4,7 +4,7 @@ This repository contains the **research prototype implementation of SAGA (State-
 
 The implementation is **Flink-native** and is intended for **research evaluation and artifact review**, not as a production library.
 
----
+
 
 ## 1. Overview
 
@@ -23,7 +23,7 @@ The current implementation supports the following algorithms:
 
 Each algorithm operates on **per-vertex state** and is integrated into a unified streaming runtime.
 
----
+
 
 ## 2. System Design (Code Perspective)
 
@@ -44,7 +44,7 @@ Each algorithm operates on **per-vertex state** and is integrated into a unified
 * **Flink Runtime**
   Apache Flink is used for streaming execution, fault tolerance, and state management.
 
----
+
 
 ## 3. Repository Structure
 
@@ -66,7 +66,7 @@ saga/
 
 The codebase is intentionally modular to allow reviewers to inspect algorithms, coordination, and runtime independently.
 
----
+
 
 ## 4. Build Requirements
 
@@ -82,7 +82,7 @@ The codebase is intentionally modular to allow reviewers to inspect algorithms, 
 * ≥64 GB RAM for large graphs
 * Distributed cluster recommended for scaling experiments
 
----
+
 
 ## 5. Building the Project
 
@@ -98,7 +98,7 @@ This produces a runnable JAR under:
 target/
 ```
 
----
+
 
 ## 6. Running SAGA
 
@@ -123,7 +123,7 @@ Each line represents a read-only query:
 QUERY vertexId
 ```
 
----
+
 
 ### 6.2 Running the Flink Job
 
@@ -146,13 +146,13 @@ Supported algorithm values:
 
 Queries are optional. If omitted, the system runs in update-only mode.
 
----
+
 
 ## 7. Datasets and Graph Preparation
 
 SAGA is evaluated on a collection of large real-world graphs, referred to as **G1–G10**, which are treated as **dynamic graphs** by applying incremental update batches over an initial static base graph.
 
----
+
 
 ### 7.1 Graph Sources 
 
@@ -201,7 +201,7 @@ Before graph construction, each dataset undergoes the following preprocessing st
 
 These steps ensure that all graphs conform to a consistent structure suitable for combinatorial graph algorithms.
 
----
+
 
 ### 7.3 CSR Construction
 
@@ -230,7 +230,7 @@ While updates are provided as a stream of `ADD/DEL` operations, SAGA internally 
 
 CSR is chosen to align with high-performance graph processing practices and to ensure efficient neighborhood access during incremental updates.
 
----
+
 
 ### 7.4 Dynamic Update Stream Generation
 
@@ -247,7 +247,7 @@ where `u` and `v` are vertex identifiers consistent with the CSR mapping.
 
 Updates are applied incrementally on top of the base CSR graph during execution.
 
----
+
 
 ### 7.5 Update Batch Sizes
 
@@ -269,7 +269,7 @@ Each batch is processed independently to measure:
 * throughput,
 * query latency under concurrent updates.
 
----
+
 
 ### 7.6 Batch Generation Methodology
 
@@ -285,7 +285,7 @@ This approach:
 * avoids synthetic graph generation,
 * reflects realistic incremental graph evolution.
 
----
+
 
 ### 7.7 Queries
 
@@ -301,7 +301,7 @@ QUERY vertexId
 
 where `vertexId` refers to a vertex in the current graph.
 
----
+
 
 #### Query Semantics
 
@@ -316,7 +316,7 @@ Depending on the selected algorithm:
 * **GC**: query returns the current color of the vertex
 * **MM**: query returns the matched partner (or −1 if unmatched)
 
----
+
 
 #### Queries During Updates
 
@@ -327,7 +327,7 @@ Queries may be issued:
 
 This allows evaluation of **query latency under active graph evolution**, which is a core design goal of SAGA.
 
----
+
 
 #### Query Cost Model
 
@@ -339,7 +339,7 @@ Query latency depends on:
 
 No log replay, joins, or recomputation is required.
 
----
+
 
 ## 8.  Logging and Debugging
 
@@ -379,11 +379,11 @@ These logs provide visibility into:
 * checkpointing and recovery
 * runtime errors, if any
 
----
+
 
 ## 9. Anonymity Notice
 
 This repository is released **anonymously** for peer review.
 No identifying information is included in the code or documentation.
 
----
+
