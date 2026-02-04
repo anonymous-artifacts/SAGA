@@ -157,19 +157,19 @@ SAGA is evaluated on a collection of large real-world graphs, referred to as **G
 ### 7.1 Graph Sources 
 
 Table below summarizes the graphs used in evaluation. All graphs are publicly available benchmark datasets commonly used in large-scale graph processing and graph algorithm research.
+| S. No. | Graph Name       | Vertices (|V|) | Edges (|E|) | Avg Degree (|E|/|V|) |
+|--------|------------------|---------------:|------------:|--------------------:|
+| G1  | citationCiteseer | 0.27M | 2.31M | 8.55 |
+| G2  | amazon0601       | 0.40M | 4.89M | 12.22 |
+| G3  | as-Skitter       | 1.69M | 22.19M | 13.14 |
+| G4  | cit-Patents      | 3.77M | 33.04M | 8.80 |
+| G5  | rmat22           | 4.19M | 65.66M | 15.67 |
+| G6  | soc-LiveJournal1 | 4.85M | 85.70M | 17.67 |
+| G7  | delaunay_n24     | 16.78M | 100.66M | 5.99 |
+| G8  | kron_g500-logn21 | 2.09M | 182.08M | 87.11 |
+| G9  | uk-2002          | 18.52M | 523.57M | 28.27 |
+| G10 | com-Friendster   | 65.61M | 1.82B | 27.58 |
 
-| S. No. | Graph Name       | |V| (Vertices) | |E| (Edges) | |E| / |V| |
-| ----- | ---------------- | -------------| ---------- | -------- |
-|     G1 | citationCiteseer |          0.27M |       2.31M |      8.55 |
-|     G2 | amazon0601       |          0.40M |       4.89M |     12.22 |
-|     G3 | as-Skitter       |          1.69M |      22.19M |     13.14 |
-|     G4 | cit-Patents      |          3.77M |      33.04M |      8.80 |
-|     G5 | rmat22           |          4.19M |      65.66M |     15.67 |
-|     G6 | soc-LiveJournal1 |          4.85M |      85.70M |     17.67 |
-|     G7 | delaunay_n24     |         16.78M |     100.66M |      5.99 |
-|     G8 | kron_g500-logn21 |          2.09M |     182.08M |     87.11 |
-|     G9 | uk-2002          |         18.52M |     523.57M |     28.27 |
-|    G10 | com-Friendster   |         65.61M |       1.82B |     27.58 |
 
 **Notes:**
 
