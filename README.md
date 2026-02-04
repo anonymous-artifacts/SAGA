@@ -148,45 +148,108 @@ Queries are optional. If omitted, the system runs in update-only mode.
 
 ---
 
-## 7. Datasets
+## 7. Datasets and Graph Preparation
 
-SAGA is evaluated on **dynamic graphs**, where a static base graph is incrementally modified by a stream of updates. This section describes how datasets are prepared and how update batches are generated.
+SAGA is evaluated on a collection of large real-world graphs, referred to as **G1–G10**, which are treated as **dynamic graphs** by applying incremental update batches over an initial static base graph.
 
-#### Base Graph
+---
 
-Each experiment starts from a **static base graph**, provided as an edge list:
+### 7.1 Graph Sources 
 
-```text
-u v
-u v
-u v
-```
+Table below summarizes the graphs used in evaluation. All graphs are publicly available benchmark datasets commonly used in large-scale graph processing and graph algorithm research.
 
-where `u` and `v` denote vertex identifiers.
+| S. No. | Graph Name       | |V| (Vertices) | |E| (Edges) | |E| / |V| |
+| -----: | ---------------- | -------------: | ----------: | --------: |
+|     G1 | citationCiteseer |          0.27M |       2.31M |      8.55 |
+|     G2 | amazon0601       |          0.40M |       4.89M |     12.22 |
+|     G3 | as-Skitter       |          1.69M |      22.19M |     13.14 |
+|     G4 | cit-Patents      |          3.77M |      33.04M |      8.80 |
+|     G5 | rmat22           |          4.19M |      65.66M |     15.67 |
+|     G6 | soc-LiveJournal1 |          4.85M |      85.70M |     17.67 |
+|     G7 | delaunay_n24     |         16.78M |     100.66M |      5.99 |
+|     G8 | kron_g500-logn21 |          2.09M |     182.08M |     87.11 |
+|     G9 | uk-2002          |         18.52M |     523.57M |     28.27 |
+|    G10 | com-Friendster   |         65.61M |       1.82B |     27.58 |
 
-The base graph is loaded into SAGA as the initial state before any dynamic updates are applied.
+**Notes:**
 
-#### Update Stream Construction
+* Graphs span **social, web, citation, and synthetic** categories.
+* They cover a wide range of:
 
-To model graph evolution, a subset of edges from the dataset is converted into a **stream of dynamic updates**.
+  * graph sizes,
+  * degree distributions,
+  * sparsity/density characteristics.
+* This diversity is intentional to stress different aspects of SAGA’s design.
 
-Each update is represented in text form as:
+The collection includes both real-world graphs and synthetic generators (e.g., RMAT and Kronecker graphs) to evaluate behavior across diverse structural characteristics.
+
+### 7.2 Data Cleaning and Preprocessing
+
+Before graph construction, each dataset undergoes the following preprocessing steps:
+
+1. **Removal of self-loops**
+   Edges of the form `(u, u)` are discarded.
+
+2. **Duplicate edge elimination**
+   Multiple occurrences of the same edge are collapsed into a single edge.
+
+3. **Undirected normalization**
+   For directed inputs, edges are symmetrized so that `(u, v)` implies `(v, u)`.
+
+4. **Vertex ID normalization**
+   Vertex identifiers are remapped to a dense range `[0, n)` to improve memory locality.
+
+These steps ensure that all graphs conform to a consistent structure suitable for combinatorial graph algorithms.
+
+---
+
+### 7.3 CSR Construction
+
+Internally, SAGA represents graphs using the **Compressed Sparse Row (CSR)** format.
+
+For each graph:
+
+* an adjacency list is constructed after preprocessing,
+* neighbors are stored contiguously in memory,
+* an offset array indexes the start of each vertex’s adjacency.
+
+Conceptually, the CSR representation consists of:
+
+* a **row pointer array** of size `|V| + 1`, and
+* a **column index array** of size `|E|`.
+
+This representation:
+
+* enables efficient neighbor traversal,
+* improves cache locality,
+* minimizes memory overhead,
+* aligns with high-performance graph processing practices.
+
+The CSR structure serves as the **initial base graph state** before dynamic updates are applied. 
+While updates are provided as a stream of `ADD/DEL` operations, SAGA internally maintains vertex adjacency using CSR-derived structures that are incrementally updated during execution.
+
+CSR is chosen to align with high-performance graph processing practices and to ensure efficient neighborhood access during incremental updates.
+
+---
+
+### 7.4 Dynamic Update Stream Generation
+
+To model graph evolution, a subset of edges from each CSR graph is converted into a **stream of dynamic updates**.
+
+Each update is encoded textually as:
 
 ```text
 ADD u v
 DEL u v
 ```
 
-where:
+where `u` and `v` are vertex identifiers consistent with the CSR mapping.
 
-* `ADD u v` inserts an edge between vertices `u` and `v`
-* `DEL u v` removes an edge between vertices `u` and `v`
-
-These updates are processed incrementally by SAGA’s streaming runtime.
+Updates are applied incrementally on top of the base CSR graph during execution.
 
 ---
 
-#### Update Batch Sizes
+### 7.5 Update Batch Sizes
 
 To evaluate scalability and responsiveness under varying workloads, update streams are divided into **batches of increasing size**.
 
@@ -202,43 +265,79 @@ The following batch sizes are used throughout the evaluation:
 
 Each batch is processed independently to measure:
 
-* update processing time
-* throughput
-* query latency under concurrent updates
+* update processing time,
+* throughput,
+* query latency under concurrent updates.
 
-#### Batch Generation Methodology
+---
 
-Given an input dataset, update batches are generated as follows:
+### 7.6 Batch Generation Methodology
 
-1. Load the full edge list of the dataset.
-2. Randomly sample a subset of edges.
-3. Split the sampled edges into batches of the desired size.
-4. Emit updates sequentially as `ADD` or `DEL` operations.
+Given a preprocessed CSR graph, update batches are generated as follows:
 
-This methodology:
+1. Select a subset of edges from the CSR representation.
+2. Randomly partition the selected edges into batches of the desired size.
+3. Emit each batch as a sequence of `ADD` or `DEL` operations.
 
-* preserves the original graph structure
-* avoids synthetic graph generation
-* reflects realistic incremental graph evolution
+This approach:
+
+* preserves the original graph topology,
+* avoids synthetic graph generation,
+* reflects realistic incremental graph evolution.
+
+---
+
+### 7.7 Queries
+
+SAGA supports **read-only vertex queries** that can be issued during or after update processing.
+
+#### Query Format
+
+Each query is encoded as:
+
+```text
+QUERY vertexId
+```
+
+where `vertexId` refers to a vertex in the current graph.
+
+---
+
+#### Query Semantics
+
+* Queries are **read-only**
+* Queries **do not modify** graph or algorithm state
+* Queries **do not block** update processing
+* Queries are served directly from **live keyed vertex state**
+
+Depending on the selected algorithm:
+
+* **MIS**: query returns whether the vertex is in the independent set
+* **GC**: query returns the current color of the vertex
+* **MM**: query returns the matched partner (or −1 if unmatched)
+
+---
 
 #### Queries During Updates
 
 Queries may be issued:
 
 * concurrently with update batches, or
-* after a batch has completed
+* after a batch has completed.
 
-Queries are encoded as:
+This allows evaluation of **query latency under active graph evolution**, which is a core design goal of SAGA.
 
-```text
-QUERY vertexId
-```
+---
 
-All queries are served from **live per-vertex state** and do not block update processing.
-* Queries are **read-only**
-* Queries do **not block updates**
-* Queries read directly from **live keyed vertex state**
-* Query latency depends only on state access and Flink scheduling
+#### Query Cost Model
+
+Query latency depends on:
+
+* keyed state access,
+* Flink task scheduling,
+* operator execution overhead.
+
+No log replay, joins, or recomputation is required.
 
 ---
 
