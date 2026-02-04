@@ -159,7 +159,7 @@ SAGA is evaluated on a collection of large real-world graphs, referred to as **G
 Table below summarizes the graphs used in evaluation. All graphs are publicly available benchmark datasets commonly used in large-scale graph processing and graph algorithm research.
 
 | S. No. | Graph Name       | |V| (Vertices) | |E| (Edges) | |E| / |V| |
-| -----: | ---------------- | -------------: | ----------: | --------: |
+| ----- | ---------------- | -------------| ---------- | -------- |
 |     G1 | citationCiteseer |          0.27M |       2.31M |      8.55 |
 |     G2 | amazon0601       |          0.40M |       4.89M |     12.22 |
 |     G3 | as-Skitter       |          1.69M |      22.19M |     13.14 |
