@@ -381,8 +381,175 @@ These logs provide visibility into:
 * runtime errors, if any
 
 
+## 9. Running Experiments
 
-## 9. Anonymity Notice
+This section describes how to run the experimental workloads used to evaluate SAGA once the code is compiled.
+
+All experiments follow the same execution pattern:
+
+1. start a Flink cluster,
+2. provide a base graph (preprocessed),
+3. provide an update stream,
+4. optionally provide a query stream,
+5. execute the SAGA Flink job with the desired algorithm.
+
+
+### 10.1 Prerequisites
+
+Before running experiments, ensure that:
+
+* Apache Flink is installed and configured
+* `$FLINK_HOME/bin` is in the system path
+* sufficient memory is available for the chosen graph
+* the project has been compiled using:
+
+```bash
+mvn clean package
+```
+
+
+### 10.2 Starting the Flink Cluster
+
+On a standalone or cluster setup:
+
+```bash
+$FLINK_HOME/bin/start-cluster.sh
+```
+
+Verify that the cluster is running by visiting:
+
+```text
+http://localhost:8081
+```
+
+or by listing running jobs:
+
+```bash
+$FLINK_HOME/bin/flink list
+```
+
+
+### 10.3 Running an Experiment (General Template)
+
+All experiments are launched using the same Flink job entry point:
+
+```bash
+flink run \
+  -c saga.runtime.flink.SagaJob \
+  target/saga.jar \
+  --algorithm <ALGO> \
+  --updates <UPDATE_FILE> \
+  --queries <QUERY_FILE>
+```
+
+Where:
+
+* `<ALGO>` ∈ `{MIS, GC, MM}`
+* `<UPDATE_FILE>` is a text file containing `ADD` / `DEL` operations
+* `<QUERY_FILE>` is optional and contains `QUERY vertexId` entries
+
+
+### 10.4 Algorithm-Specific Experiments
+
+#### Maximal Independent Set (SAGA-MIS)
+
+```bash
+flink run \
+  -c saga.runtime.flink.SagaJob \
+  target/saga.jar \
+  --algorithm MIS \
+  --updates updates_G5_10K.txt \
+  --queries queries.txt
+```
+
+This runs incremental MIS maintenance while processing dynamic updates.
+
+
+#### Graph Coloring (SAGA-GC)
+
+```bash
+flink run \
+  -c saga.runtime.flink.SagaJob \
+  target/saga.jar \
+  --algorithm GC \
+  --updates updates_G5_10K.txt \
+  --queries queries.txt
+```
+
+This maintains a proper vertex coloring under dynamic updates.
+
+
+#### Maximal Matching (SAGA-MM)
+
+```bash
+flink run \
+  -c saga.runtime.flink.SagaJob \
+  target/saga.jar \
+  --algorithm MM \
+  --updates updates_G5_10K.txt \
+  --queries queries.txt
+```
+
+This maintains a maximal matching incrementally.
+
+
+### 10.5 Running Different Update Batch Sizes
+
+To evaluate scalability, the same experiment is repeated with update batches of different sizes:
+
+| Batch Label | Updates |
+| ----------- | ------- |
+| 0.01K       | 10      |
+| 0.1K        | 100     |
+| 1K          | 1,000   |
+| 10K         | 10,000  |
+| 100K        | 100,000 |
+
+Example:
+
+```bash
+--updates updates_G6_100K.txt
+```
+
+Each update file corresponds to a batch generated as described in Section 7.
+
+
+### 10.6 Running Without Queries
+
+To measure **pure update throughput**, omit the query argument:
+
+```bash
+flink run \
+  -c saga.runtime.flink.SagaJob \
+  target/saga.jar \
+  --algorithm MIS \
+  --updates updates_G6_100K.txt
+```
+
+This runs the system in **update-only mode**.
+
+
+### 10.7 Monitoring Execution
+
+During execution, the following can be observed:
+
+* Flink Web UI:
+
+  ```text
+  http://localhost:8081
+  ```
+* Job status and runtime
+* Operator parallelism
+* Backpressure and throughput
+* Checkpoint progress
+
+Runtime logs are available under:
+
+```text
+$FLINK_HOME/log/
+```
+
+## 10. Anonymity Notice
 
 This repository is released **anonymously** for peer review.
 No identifying information is included in the code or documentation.
