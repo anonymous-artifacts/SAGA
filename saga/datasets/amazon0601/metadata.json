@@ -1,0 +1,21 @@
+{
+  "name": "amazon0601",
+  "num_vertices": 403394,
+  "num_edges": 3387388,
+  "base_edges": 3048649,
+  "update_edges_available": 338739,
+  "base_fraction": 0.9,
+  "update_files": [
+    "0.01K",
+    "0.1K",
+    "1K",
+    "10K",
+    "100K"
+  ],
+  "query_count": 10000,
+  "algorithms": [
+    "MIS",
+    "GC",
+    "MM"
+  ]
+}
