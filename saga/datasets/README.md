@@ -79,5 +79,11 @@ These outputs are derived from the base graph and are directly consumable by SAG
 Other datasets used in the evaluation (e.g., social networks, citation graphs, web graphs) are **not included** due to size constraints.
 They can be downloaded from public repositories and processed using the same utilities provided here.
 
+| Dataset     | Type           | Source |
+| ----------- | -------------- | -------------- |
+| as-Skitter  | Web graph      | https://snap.stanford.edu/data/as-Skitter.html |
+| cit-Patents | Citation graph |  |
+| wiki-Talk   | Social network |  |
+| LiveJournal | Social network |  |
 
 
