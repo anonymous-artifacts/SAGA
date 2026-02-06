@@ -6,9 +6,6 @@ Due to repository size constraints, we include **only one graph dataset** in thi
 
 * **amazon0601** — provided in compressed (`.gz`) format
 
-All other datasets used in the paper can be downloaded from public sources (e.g., social, web, and citation graphs).
-Links can be added as needed.
-
 ## Included Dataset
 
 ### amazon0601
